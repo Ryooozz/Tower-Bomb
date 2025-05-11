@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower Bomb Game</title>
-  <!-- Tambahkan Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
@@ -14,7 +13,6 @@
       margin: 0;
       padding: 0;
     }
-
     .top-bar {
       display: flex;
       align-items: center;
@@ -22,7 +20,6 @@
       background-color: #111;
       position: relative;
     }
-
     .menu-toggle {
       font-size: 24px;
       cursor: pointer;
@@ -31,7 +28,6 @@
       color: white;
       margin-right: 10px;
     }
-
     .menu {
       display: none;
       position: absolute;
@@ -43,7 +39,6 @@
       border-radius: 5px;
       z-index: 10;
     }
-
     .menu a {
       display: block;
       color: white;
@@ -51,25 +46,21 @@
       text-decoration: none;
       cursor: pointer;
     }
-
     .menu a:hover {
       color: lime;
     }
-
     .main-content, .general-content {
       display: none;
       flex-direction: column;
       align-items: center;
       padding: 20px;
     }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(var(--cols), 50px);
       gap: 5px;
       margin: 20px 0;
     }
-
     .cell {
       width: 50px;
       height: 50px;
@@ -79,22 +70,18 @@
       align-items: center;
       cursor: pointer;
     }
-
     .cell.revealed.safe { background: green; }
     .cell.revealed.bomb { background: red; }
     .cell.revealed.correct { background: limegreen; }
-
     .controls {
       margin-top: 20px;
     }
-
     button { margin: 5px; }
   </style>
 </head>
 <body>
 
   <div class="top-bar">
-    <!-- Tombol menu baru dengan ikon -->
     <button class="menu-toggle" onclick="toggleMenu()">
       <i class="fas fa-bars"></i>
     </button>
@@ -135,6 +122,17 @@
   </div>
 
   <script>
+    // Memastikan saldo wallet yang terbaru tampil di halaman saat pertama kali dimuat
+    let wallet = parseFloat(localStorage.getItem("wallet")) || 10000;
+    document.getElementById("wallet").innerText = wallet.toFixed(2);
+
+    // Mengupdate saldo wallet di tampilan dan localStorage
+    function updateWallet(amount) {
+      wallet += amount;
+      localStorage.setItem("wallet", wallet.toFixed(2)); // Menyimpan saldo ke localStorage
+      document.getElementById("wallet").innerText = wallet.toFixed(2); // Update tampilan saldo
+    }
+
     function toggleMenu() {
       const menu = document.getElementById("menu");
       menu.style.display = menu.style.display === "block" ? "none" : "block";
@@ -170,7 +168,6 @@
     let columns = 4;
     let baseBet = 10;
     let totalBet = 0;
-    let wallet = 10000;
     let gameActive = false;
 
     function startGame() {
@@ -184,7 +181,7 @@
         return;
       }
 
-      wallet -= baseBet;
+      updateWallet(-baseBet); // Mengurangi saldo berdasarkan bet
       totalBet = 0;
       gameActive = true;
       document.getElementById("gameStatus").innerText = "Game Dimulai!";
@@ -216,10 +213,10 @@
             cellDiv.classList.add("revealed");
             if (cell.bomb) {
               cellDiv.classList.add("bomb");
-              cellDiv.innerHTML = "&#x1F480;";  // Skull emoji ()
+              cellDiv.innerHTML = "&#x1F480;";  // Skull emoji (💀)
             } else {
               cellDiv.classList.add("correct");
-              cellDiv.innerHTML = "&#x1F4B2;";  // Money emoji ()
+              cellDiv.innerHTML = "&#x1F4B2;";  // Money emoji (💲)
             }
           }
           cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
@@ -249,53 +246,7 @@
       if (currentRow === 0) {
         revealAll();
         gameActive = false;
-        wallet += totalBet;
+        updateWallet(totalBet);  // Tambah saldo jika menang
         alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
         document.getElementById("gameStatus").innerText = "Menang!";
-        totalBet = 0;
-        updateDisplay();
-        return;
-      }
-
-      currentRow--;
-      renderGrid();
-    }
-
-    function revealAll() {
-      for (let r = 0; r < 10; r++) {
-        for (let c = 0; c < columns; c++) {
-          grid[r][c].revealed = true;
-        }
-      }
-      renderGrid();
-    }
-
-    function withdrawBet() {
-      if (!gameActive) {
-        alert("Tidak ada permainan yang aktif.");
-        return;
-      }
-
-      if (totalBet > 0) {
-        wallet += totalBet;
-        alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
-        totalBet = 0;
-        gameActive = false;
-        document.getElementById("gameStatus").innerText = "Withdraw sukses. Game selesai.";
-        revealAll();
-        updateDisplay();
-      } else {
-        alert("Belum ada kemenangan untuk ditarik.");
-      }
-    }
-
-    function updateDisplay() {
-      document.getElementById("wallet").innerText = wallet.toFixed(2);
-      document.getElementById("totalBet").innerText = baseBet.toFixed(2);
-      document.getElementById("winAmount").innerText = totalBet.toFixed(2);
-    }
-
-    window.onload = showGame;
-  </script>
-</body>
-</html>
+        totalBet
