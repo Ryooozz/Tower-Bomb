@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower Bomb Game</title>
-  <!-- Tambahkan Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
@@ -82,7 +81,6 @@
 </head>
 <body>
   <div class="top-bar">
-    <!-- Tombol menu baru dengan ikon -->
     <button class="menu-toggle" onclick="toggleMenu()">
       <i class="fas fa-bars"></i>
     </button>
@@ -121,25 +119,31 @@
   </div>
 
   <script>
-    let wallet = 10000; // Nilai default
-
-    // Fungsi untuk memperbarui tampilan dan menyimpan wallet ke localStorage
+    let wallet = 10000; // Nilai default wallet
+    let totalBet = 0; // Total taruhan
+    let baseBet = 10; // Taruhan dasar
+    let currentRow = 9; // Baris permainan
+    let selectedLevel = 1; // Level permainan
+    let gameActive = false; // Status permainan
+    let grid = []; // Grid permainan
+    let columns = 4; // Jumlah kolom dalam grid
+    
+    // Fungsi untuk memperbarui tampilan wallet dan menyimpan di localStorage
     function updateWalletDisplay() {
       document.getElementById("wallet").innerText = wallet.toFixed(2);
-      // Simpan wallet ke localStorage setiap kali ada perubahan
       localStorage.setItem("wallet", wallet.toFixed(2));
     }
 
-    // Ketika halaman dimuat, periksa apakah ada wallet yang disimpan
+    // Ketika halaman dimuat, cek jika ada wallet yang disimpan di localStorage
     window.onload = function() {
       const savedWallet = localStorage.getItem("wallet");
       if (savedWallet !== null) {
-        wallet = parseFloat(savedWallet); // Gunakan nilai yang tersimpan
+        wallet = parseFloat(savedWallet);
       } else {
-        wallet = 10000; // Nilai default jika tidak ada data di localStorage
+        wallet = 10000;
       }
-      updateWalletDisplay(); // Perbarui tampilan wallet
-      showGame(); // Menampilkan game jika diperlukan
+      updateWalletDisplay();
+      showGame();
     };
 
     // Fungsi menu
@@ -166,20 +170,52 @@
       document.getElementById("menu").style.display = "none";
     }
 
-    // Fungsi untuk memulai game
+    // Fungsi memulai permainan
     function startGame() {
-      const baseBet = parseFloat(document.getElementById("bet").value);
+      baseBet = parseFloat(document.getElementById("bet").value);
+      selectedLevel = parseInt(document.getElementById("level").value);
+      columns = 5 - selectedLevel;
+      currentRow = 9;
+
+      if (baseBet > wallet || baseBet <= 0) {
+        alert("Saldo tidak cukup atau bet tidak valid!");
+        return;
+      }
+
       wallet -= baseBet;
-      updateWalletDisplay();
+      totalBet = 0;
+      gameActive = true;
       document.getElementById("gameStatus").innerText = "Game Dimulai!";
-      // Game logic disini
+      updateWalletDisplay();
+
+      document.documentElement.style.setProperty('--cols', columns);
+      grid = [];
+
+      // Membuat grid permainan
+      for (let r = 0; r < 10; r++) {
+        const row = [];
+        const bombIndex = Math.floor(Math.random() * columns);
+        for (let c = 0; c < columns; c++) {
+          row.push({ bomb: c === bombIndex, revealed: false });
+        }
+        grid.push(row);
+      }
+      renderGrid();
     }
 
-    // Fungsi untuk menarik taruhan
-    function withdrawBet() {
-      // Logika penarikan taruhan
-      alert("Taruhan telah ditarik.");
-    }
-  </script>
-</body>
-</html>
+    // Fungsi untuk menggambar grid permainan
+    function renderGrid() {
+      const gridContainer = document.getElementById("grid");
+      gridContainer.innerHTML = "";
+      grid.forEach((row, rIdx) => {
+        row.forEach((cell, cIdx) => {
+          const cellDiv = document.createElement("div");
+          cellDiv.className = "cell";
+          if (cell.revealed) {
+            cellDiv.classList.add("revealed");
+            if (cell.bomb) {
+              cellDiv.classList.add("bomb");
+              cellDiv.innerHTML = "&#x1F480;"; // Emoji tengkorak
+            } else {
+              cellDiv.classList.add("correct");
+              cellDiv.inner
