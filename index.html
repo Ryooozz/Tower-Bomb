@@ -14,7 +14,6 @@
       margin: 0;
       padding: 0;
     }
-
     .top-bar {
       display: flex;
       align-items: center;
@@ -22,7 +21,6 @@
       background-color: #111;
       position: relative;
     }
-
     .menu-toggle {
       font-size: 24px;
       cursor: pointer;
@@ -31,7 +29,6 @@
       color: white;
       margin-right: 10px;
     }
-
     .menu {
       display: none;
       position: absolute;
@@ -43,7 +40,6 @@
       border-radius: 5px;
       z-index: 10;
     }
-
     .menu a {
       display: block;
       color: white;
@@ -51,25 +47,21 @@
       text-decoration: none;
       cursor: pointer;
     }
-
     .menu a:hover {
       color: lime;
     }
-
     .main-content, .general-content {
       display: none;
       flex-direction: column;
       align-items: center;
       padding: 20px;
     }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(var(--cols), 50px);
       gap: 5px;
       margin: 20px 0;
     }
-
     .cell {
       width: 50px;
       height: 50px;
@@ -79,20 +71,16 @@
       align-items: center;
       cursor: pointer;
     }
-
     .cell.revealed.safe { background: green; }
     .cell.revealed.bomb { background: red; }
     .cell.revealed.correct { background: limegreen; }
-
     .controls {
       margin-top: 20px;
     }
-
     button { margin: 5px; }
   </style>
 </head>
 <body>
-
   <div class="top-bar">
     <!-- Tombol menu baru dengan ikon -->
     <button class="menu-toggle" onclick="toggleMenu()">
@@ -105,11 +93,11 @@
       <a onclick="showGame()">Game</a>
     </div>
   </div>
-
+  
   <div class="general-content" id="generalContent">
     <h2>Selamat Mencoba Game Saya</h2>
   </div>
-
+  
   <div class="main-content" id="gameContent">
     <div>
       <label for="bet">Bet Amount: </label>
@@ -122,7 +110,6 @@
       </select>
       <button onclick="startGame()">Start Game</button>
     </div>
-
     <div class="controls">
       <div>Wallet: <span id="wallet">10000</span></div>
       <div>Total Bet: <span id="totalBet">0</span></div>
@@ -130,11 +117,32 @@
       <button onclick="withdrawBet()">Withdraw Bet</button>
       <div id="gameStatus" style="margin-top: 10px; font-weight: bold;"></div>
     </div>
-
     <div class="grid" id="grid"></div>
   </div>
 
   <script>
+    let wallet = 10000; // Nilai default
+
+    // Fungsi untuk memperbarui tampilan dan menyimpan wallet ke localStorage
+    function updateWalletDisplay() {
+      document.getElementById("wallet").innerText = wallet.toFixed(2);
+      // Simpan wallet ke localStorage setiap kali ada perubahan
+      localStorage.setItem("wallet", wallet.toFixed(2));
+    }
+
+    // Ketika halaman dimuat, periksa apakah ada wallet yang disimpan
+    window.onload = function() {
+      const savedWallet = localStorage.getItem("wallet");
+      if (savedWallet !== null) {
+        wallet = parseFloat(savedWallet); // Gunakan nilai yang tersimpan
+      } else {
+        wallet = 10000; // Nilai default jika tidak ada data di localStorage
+      }
+      updateWalletDisplay(); // Perbarui tampilan wallet
+      showGame(); // Menampilkan game jika diperlukan
+    };
+
+    // Fungsi menu
     function toggleMenu() {
       const menu = document.getElementById("menu");
       menu.style.display = menu.style.display === "block" ? "none" : "block";
@@ -158,144 +166,20 @@
       document.getElementById("menu").style.display = "none";
     }
 
-    const multipliers = {
-      1: [1.28, 1.71, 2.28, 3.03, 4.05, 5.39, 7.19, 9.59, 12.79, 17.05],
-      2: [1.44, 2.16, 3.24, 4.86, 7.29, 10.93, 16.4, 24.6, 36.91, 55.36],
-      3: [1.92, 3.84, 7.68, 15.36, 30.72, 61.44, 122.88, 245.76, 491.52, 983.04],
-    };
-
-    let grid = [];
-    let currentRow = 9;
-    let selectedLevel = 1;
-    let columns = 4;
-    let baseBet = 10;
-    let totalBet = 0;
-    let wallet = 10000;
-    let gameActive = false;
-
+    // Fungsi untuk memulai game
     function startGame() {
-      baseBet = parseFloat(document.getElementById("bet").value);
-      selectedLevel = parseInt(document.getElementById("level").value);
-      columns = 5 - selectedLevel;
-      currentRow = 9;
-
-      if (baseBet > wallet || baseBet <= 0) {
-        alert("Saldo tidak cukup atau bet tidak valid!");
-        return;
-      }
-
+      const baseBet = parseFloat(document.getElementById("bet").value);
       wallet -= baseBet;
-      totalBet = 0;
-      gameActive = true;
+      updateWalletDisplay();
       document.getElementById("gameStatus").innerText = "Game Dimulai!";
-      updateDisplay();
-
-      document.documentElement.style.setProperty('--cols', columns);
-      grid = [];
-
-      for (let r = 0; r < 10; r++) {
-        const row = [];
-        const bombIndex = Math.floor(Math.random() * columns);
-        for (let c = 0; c < columns; c++) {
-          row.push({ bomb: c === bombIndex, revealed: false });
-        }
-        grid.push(row);
-      }
-
-      renderGrid();
+      // Game logic disini
     }
 
-    function renderGrid() {
-      const gridContainer = document.getElementById("grid");
-      gridContainer.innerHTML = "";
-      grid.forEach((row, rIdx) => {
-        row.forEach((cell, cIdx) => {
-          const cellDiv = document.createElement("div");
-          cellDiv.className = "cell";
-          if (cell.revealed) {
-            cellDiv.classList.add("revealed");
-            if (cell.bomb) {
-              cellDiv.classList.add("bomb");
-              cellDiv.innerHTML = "&#x1F480;";  // Skull emoji ()
-            } else {
-              cellDiv.classList.add("correct");
-              cellDiv.innerHTML = "&#x1F4B2;";  // Money emoji ()
-            }
-          }
-          cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
-          gridContainer.appendChild(cellDiv);
-        });
-      });
-    }
-
-    function handleClick(r, c) {
-      if (!gameActive || r !== currentRow || grid[r][c].revealed) return;
-
-      grid[r][c].revealed = true;
-
-      if (grid[r][c].bomb) {
-        revealAll();
-        totalBet = 0;
-        gameActive = false;
-        alert("Game Over! You Lose.");
-        document.getElementById("gameStatus").innerText = "Game Over!";
-        updateDisplay();
-        return;
-      }
-
-      totalBet = baseBet * multipliers[selectedLevel][9 - currentRow];
-      updateDisplay();
-
-      if (currentRow === 0) {
-        revealAll();
-        gameActive = false;
-        wallet += totalBet;
-        alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
-        document.getElementById("gameStatus").innerText = "Menang!";
-        totalBet = 0;
-        updateDisplay();
-        return;
-      }
-
-      currentRow--;
-      renderGrid();
-    }
-
-    function revealAll() {
-      for (let r = 0; r < 10; r++) {
-        for (let c = 0; c < columns; c++) {
-          grid[r][c].revealed = true;
-        }
-      }
-      renderGrid();
-    }
-
+    // Fungsi untuk menarik taruhan
     function withdrawBet() {
-      if (!gameActive) {
-        alert("Tidak ada permainan yang aktif.");
-        return;
-      }
-
-      if (totalBet > 0) {
-        wallet += totalBet;
-        alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
-        totalBet = 0;
-        gameActive = false;
-        document.getElementById("gameStatus").innerText = "Withdraw sukses. Game selesai.";
-        revealAll();
-        updateDisplay();
-      } else {
-        alert("Belum ada kemenangan untuk ditarik.");
-      }
+      // Logika penarikan taruhan
+      alert("Taruhan telah ditarik.");
     }
-
-    function updateDisplay() {
-      document.getElementById("wallet").innerText = wallet.toFixed(2);
-      document.getElementById("totalBet").innerText = baseBet.toFixed(2);
-      document.getElementById("winAmount").innerText = totalBet.toFixed(2);
-    }
-
-    window.onload = showGame;
   </script>
 </body>
 </html>
