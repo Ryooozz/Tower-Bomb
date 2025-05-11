@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower Bomb Game</title>
+  <!-- Tambahkan Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
@@ -93,6 +94,7 @@
 <body>
 
   <div class="top-bar">
+    <!-- Tombol menu baru dengan ikon -->
     <button class="menu-toggle" onclick="toggleMenu()">
       <i class="fas fa-bars"></i>
     </button>
@@ -133,6 +135,16 @@
   </div>
 
   <script>
+    // Mengambil saldo wallet dari localStorage atau set default 10000
+    let wallet = parseFloat(localStorage.getItem("wallet")) || 10000;
+
+    // Fungsi untuk memperbarui saldo di tampilan dan di localStorage
+    function updateWallet(amount) {
+      wallet += amount;
+      localStorage.setItem("wallet", wallet);  // Update ke localStorage
+      document.getElementById("wallet").innerText = wallet.toFixed(2); // Update di tampilan
+    }
+
     function toggleMenu() {
       const menu = document.getElementById("menu");
       menu.style.display = menu.style.display === "block" ? "none" : "block";
@@ -168,7 +180,6 @@
     let columns = 4;
     let baseBet = 10;
     let totalBet = 0;
-    let wallet = parseFloat(localStorage.getItem("wallet")) || 10000;
     let gameActive = false;
 
     function startGame() {
@@ -182,8 +193,7 @@
         return;
       }
 
-      wallet -= baseBet;
-      localStorage.setItem("wallet", wallet);
+      updateWallet(-baseBet);  // Kurangi saldo wallet berdasarkan baseBet
       totalBet = 0;
       gameActive = true;
       document.getElementById("gameStatus").innerText = "Game Dimulai!";
@@ -215,10 +225,10 @@
             cellDiv.classList.add("revealed");
             if (cell.bomb) {
               cellDiv.classList.add("bomb");
-              cellDiv.innerHTML = "&#x1F480;";
+              cellDiv.innerHTML = "&#x1F480;";  // Skull emoji (💀)
             } else {
               cellDiv.classList.add("correct");
-              cellDiv.innerHTML = "&#x1F4B2;";
+              cellDiv.innerHTML = "&#x1F4B2;";  // Money emoji (💲)
             }
           }
           cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
@@ -248,8 +258,7 @@
       if (currentRow === 0) {
         revealAll();
         gameActive = false;
-        wallet += totalBet;
-        localStorage.setItem("wallet", wallet);
+        updateWallet(totalBet);  // Tambahkan saldo saat menang
         alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
         document.getElementById("gameStatus").innerText = "Menang!";
         totalBet = 0;
@@ -277,8 +286,7 @@
       }
 
       if (totalBet > 0) {
-        wallet += totalBet;
-        localStorage.setItem("wallet", wallet);
+        updateWallet(totalBet);  // Tambahkan saldo saat withdraw
         alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
         totalBet = 0;
         gameActive = false;
