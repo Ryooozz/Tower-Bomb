@@ -241,4 +241,66 @@
     }
 
     function handleClick(r, c) {
-      if (!gameActive || r !== currentRow || grid[r][c].reve
+      if (!gameActive || r !== currentRow || grid[r][c].revealed) return;
+
+      grid[r][c].revealed = true;
+
+      if (grid[r][c].bomb) {
+        revealAll();
+        totalBet = 0;
+        gameActive = false;
+        alert("Game Over! You Lose.");
+        document.getElementById("gameStatus").innerText = "Game Over!";
+        updateDisplay();
+        return;
+      }
+
+      totalBet = baseBet * multipliers[selectedLevel][9 - currentRow];
+      updateDisplay();
+
+      if (currentRow === 0) {
+        revealAll();
+        gameActive = false;
+        updateWallet(totalBet);  // Tambah saldo jika menang
+        alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
+        document.getElementById("gameStatus").innerText = "Menang!";
+        totalBet = 0;
+        updateDisplay();
+        return;
+      }
+
+      currentRow--;
+      renderGrid();
+    }
+
+    function revealAll() {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < columns; c++) {
+          grid[r][c].revealed = true;
+        }
+      }
+      renderGrid();
+    }
+
+    function withdrawBet() {
+      if (!gameActive) {
+        alert("Tidak ada permainan yang aktif.");
+        return;
+      }
+
+      if (totalBet > 0) {
+        updateWallet(totalBet);  // Tarik saldo
+        alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
+        totalBet = 0;
+        gameActive = false;
+        document.getElementById("gameStatus").innerText = "Withdraw sukses. Game selesai.";
+        revealAll();
+        updateDisplay();
+      } else {
+        alert("Belum ada kemenangan untuk ditarik.");
+      }
+    }
+
+    function updateDisplay() {
+      document.getElementById("wallet").innerText = wallet.toFixed(2);
+      document.getElementById("totalBet").inner
