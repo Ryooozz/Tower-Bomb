@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tower Bomb Game</title>
+  <!-- Tambahkan Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #fff;
+      margin: 0;
+      padding: 0;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      background-color: #111;
+      position: relative;
+    }
+
+    .menu-toggle {
+      font-size: 24px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: white;
+      margin-right: 10px;
+    }
+
+    .menu {
+      display: none;
+      position: absolute;
+      top: 45px;
+      left: 10px;
+      background-color: #222;
+      border: 1px solid #444;
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 10;
+    }
+
+    .menu a {
+      display: block;
+      color: white;
+      padding: 5px 0;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .menu a:hover {
+      color: lime;
+    }
+
+    .main-content, .general-content {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(var(--cols), 50px);
+      gap: 5px;
+      margin: 20px 0;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      background: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .cell.revealed.safe { background: green; }
+    .cell.revealed.bomb { background: red; }
+    .cell.revealed.correct { background: limegreen; }
+
+    .controls {
+      margin-top: 20px;
+    }
+
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <!-- Tombol menu baru dengan ikon -->
+    <button class="menu-toggle" onclick="toggleMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <h1 style="margin: 0;">Tower Bomb Game</h1>
+    <div class="menu" id="menu">
+      <a onclick="showGeneral()">General</a>
+      <a onclick="hideAll()">Menu</a>
+      <a onclick="showGame()">Game</a>
+    </div>
+  </div>
+
+  <div class="general-content" id="generalContent">
+    <h2>Selamat Mencoba Game Saya</h2>
+  </div>
+
+  <div class="main-content" id="gameContent">
+    <div>
+      <label for="bet">Bet Amount: </label>
+      <input type="number" id="bet" value="10" />
+      <label for="level">Level: </label>
+      <select id="level">
+        <option value="1">Easy</option>
+        <option value="2">Normal</option>
+        <option value="3">Hard</option>
+      </select>
+      <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="controls">
+      <div>Wallet: <span id="wallet">10000</span></div>
+      <div>Total Bet: <span id="totalBet">0</span></div>
+      <div>Win Amount: <span id="winAmount">0</span></div>
+      <button onclick="withdrawBet()">Withdraw Bet</button>
+      <div id="gameStatus" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById("menu");
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    function showGame() {
+      document.getElementById("generalContent").style.display = "none";
+      document.getElementById("gameContent").style.display = "flex";
+      document.getElementById("menu").style.display = "none";
+    }
+
+    function showGeneral() {
+      document.getElementById("generalContent").style.display = "flex";
+      document.getElementById("gameContent").style.display = "none";
+      document.getElementById("menu").style.display = "none";
+    }
+
+    function hideAll() {
+      document.getElementById("generalContent").style.display = "none";
+      document.getElementById("gameContent").style.display = "none";
+      document.getElementById("menu").style.display = "none";
+    }
+
+    const multipliers = {
+      1: [1.28, 1.71, 2.28, 3.03, 4.05, 5.39, 7.19, 9.59, 12.79, 17.05],
+      2: [1.44, 2.16, 3.24, 4.86, 7.29, 10.93, 16.4, 24.6, 36.91, 55.36],
+      3: [1.92, 3.84, 7.68, 15.36, 30.72, 61.44, 122.88, 245.76, 491.52, 983.04],
+    };
+
+    let grid = [];
+    let currentRow = 9;
+    let selectedLevel = 1;
+    let columns = 4;
+    let baseBet = 10;
+    let totalBet = 0;
+    let wallet = 10000;
+    let gameActive = false;
+
+    function startGame() {
+      baseBet = parseFloat(document.getElementById("bet").value);
+      selectedLevel = parseInt(document.getElementById("level").value);
+      columns = 5 - selectedLevel;
+      currentRow = 9;
+
+      if (baseBet > wallet || baseBet <= 0) {
+        alert("Saldo tidak cukup atau bet tidak valid!");
+        return;
+      }
+
+      wallet -= baseBet;
+      totalBet = 0;
+      gameActive = true;
+      document.getElementById("gameStatus").innerText = "Game Dimulai!";
+      updateDisplay();
+
+      document.documentElement.style.setProperty('--cols', columns);
+      grid = [];
+
+      for (let r = 0; r < 10; r++) {
+        const row = [];
+        const bombIndex = Math.floor(Math.random() * columns);
+        for (let c = 0; c < columns; c++) {
+          row.push({ bomb: c === bombIndex, revealed: false });
+        }
+        grid.push(row);
+      }
+
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const gridContainer = document.getElementById("grid");
+      gridContainer.innerHTML = "";
+      grid.forEach((row, rIdx) => {
+        row.forEach((cell, cIdx) => {
+          const cellDiv = document.createElement("div");
+          cellDiv.className = "cell";
+          if (cell.revealed) {
+            cellDiv.classList.add("revealed");
+            if (cell.bomb) {
+              cellDiv.classList.add("bomb");
+              cellDiv.innerHTML = "&#x1F480;";  // Skull emoji ()
+            } else {
+              cellDiv.classList.add("correct");
+              cellDiv.innerHTML = "&#x1F4B2;";  // Money emoji ()
+            }
+          }
+          cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
+          gridContainer.appendChild(cellDiv);
+        });
+      });
+    }
+
+    function handleClick(r, c) {
+      if (!gameActive || r !== currentRow || grid[r][c].revealed) return;
+
+      grid[r][c].revealed = true;
+
+      if (grid[r][c].bomb) {
+        revealAll();
+        totalBet = 0;
+        gameActive = false;
+        alert("Game Over! You Lose.");
+        document.getElementById("gameStatus").innerText = "Game Over!";
+        updateDisplay();
+        return;
+      }
+
+      totalBet = baseBet * multipliers[selectedLevel][9 - currentRow];
+      updateDisplay();
+
+      if (currentRow === 0) {
+        revealAll();
+        gameActive = false;
+        wallet += totalBet;
+        alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
+        document.getElementById("gameStatus").innerText = "Menang!";
+        totalBet = 0;
+        updateDisplay();
+        return;
+      }
+
+      currentRow--;
+      renderGrid();
+    }
+
+    function revealAll() {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < columns; c++) {
+          grid[r][c].revealed = true;
+        }
+      }
+      renderGrid();
+    }
+
+    function withdrawBet() {
+      if (!gameActive) {
+        alert("Tidak ada permainan yang aktif.");
+        return;
+      }
+
+      if (totalBet > 0) {
+        wallet += totalBet;
+        alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
+        totalBet = 0;
+        gameActive = false;
+        document.getElementById("gameStatus").innerText = "Withdraw sukses. Game selesai.";
+        revealAll();
+        updateDisplay();
+      } else {
+        alert("Belum ada kemenangan untuk ditarik.");
+      }
+    }
+
+    function updateDisplay() {
+      document.getElementById("wallet").innerText = wallet.toFixed(2);
+      document.getElementById("totalBet").innerText = baseBet.toFixed(2);
+      document.getElementById("winAmount").innerText = totalBet.toFixed(2);
+    }
+
+    window.onload = showGame;
+  </script>
+</body>
+</html>
