@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower Bomb Game</title>
-  <!-- Tambahkan Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
@@ -94,7 +93,6 @@
 <body>
 
   <div class="top-bar">
-    <!-- Tombol menu baru dengan ikon -->
     <button class="menu-toggle" onclick="toggleMenu()">
       <i class="fas fa-bars"></i>
     </button>
@@ -217,10 +215,10 @@
             cellDiv.classList.add("revealed");
             if (cell.bomb) {
               cellDiv.classList.add("bomb");
-              cellDiv.innerHTML = "&#x1F480;";  // Skull emoji ()
+              cellDiv.innerHTML = "&#x1F480;";
             } else {
               cellDiv.classList.add("correct");
-              cellDiv.innerHTML = "&#x1F4B2;";  // Money emoji ()
+              cellDiv.innerHTML = "&#x1F4B2;";
             }
           }
           cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
@@ -280,6 +278,7 @@
 
       if (totalBet > 0) {
         wallet += totalBet;
+        localStorage.setItem("wallet", wallet);
         alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
         totalBet = 0;
         gameActive = false;
