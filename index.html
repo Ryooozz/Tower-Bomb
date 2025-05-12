@@ -108,6 +108,11 @@
       font-weight: bold;
       color: #fff;
     }
+
+    .start-btn:disabled {
+      background-color: gray;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -155,7 +160,7 @@
         <option value="2">Normal</option>
         <option value="3">Hard</option>
       </select>
-      <button onclick="startGame()">Start Game</button>
+      <button id="startBtn" class="start-btn" onclick="startGame()">Start Game</button>
     </div>
 
     <div class="controls">
@@ -236,42 +241,21 @@
     let gameActive = false;
 
     function startGame() {
-    if (gameActive) {
-    alert("Permainan sedang berlangsung! Selesaikan dulu sebelum memulai yang baru.");
-    return;
-  }
+      if (gameActive) {
+        alert("Game sedang aktif, silakan tunggu sampai selesai!");
+        return;
+      }
 
-    baseBet = parseFloat(document.getElementById("bet").value);
-    selectedLevel = parseInt(document.getElementById("level").value);
-    columns = 5 - selectedLevel;
-    currentRow = 9;
+      baseBet = parseFloat(document.getElementById("bet").value);
+      selectedLevel = parseInt(document.getElementById("level").value);
+      columns = 5 - selectedLevel;
+      currentRow = 9;
 
-    if (baseBet > wallet || baseBet <= 0) {
-    alert("Saldo tidak cukup atau bet tidak valid!");
-    return;
-  }
+      if (baseBet > wallet || baseBet <= 0) {
+        alert("Saldo tidak cukup atau bet tidak valid!");
+        return;
+      }
 
-    updateWallet(-baseBet);
-    totalBet = 0;
-    gameActive = true;
-    document.getElementById("gameStatus").innerText = "Game Dimulai!";
-    updateDisplay();
-
-    document.documentElement.style.setProperty('--cols', columns);
-    grid = [];
-
-    for (let r = 0; r < 10; r++) {
-    const row = [];
-    const bombIndex = Math.floor(Math.random() * columns);
-    for (let c = 0; c < columns; c++) {
-      row.push({ bomb: c === bombIndex, revealed: false });
-    }
-    grid.push(row);
-    }
-
-    renderGrid();
-    }
-      
       updateWallet(-baseBet);
       totalBet = 0;
       gameActive = true;
