@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Tower Bomb Game</title>
-  <!-- Tambahkan Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
@@ -56,7 +55,7 @@
       color: lime;
     }
 
-    .main-content, .general-content {
+    .main-content, .general-content, .wallet-content {
       display: none;
       flex-direction: column;
       align-items: center;
@@ -89,25 +88,61 @@
     }
 
     button { margin: 5px; }
+
+    .wallet-card {
+      background-color: #2a2a2a;
+      padding: 15px;
+      margin: 10px;
+      border-radius: 10px;
+      width: 250px;
+      text-align: left;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .wallet-card h3 {
+      margin: 0 0 5px 0;
+      color: lime;
+    }
+
+    .wallet-card span {
+      font-weight: bold;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
 
   <div class="top-bar">
-    <!-- Tombol menu baru dengan ikon -->
     <button class="menu-toggle" onclick="toggleMenu()">
       <i class="fas fa-bars"></i>
     </button>
     <h1 style="margin: 0;">Tower Bomb Game</h1>
     <div class="menu" id="menu">
       <a onclick="showGeneral()">General</a>
-      <a onclick="hideAll()">Menu</a>
       <a onclick="showGame()">Game</a>
+      <a onclick="showWallet()">Wallet</a>
+      <a onclick="hideAll()">Tutup</a>
     </div>
   </div>
 
   <div class="general-content" id="generalContent">
     <h2>Selamat Mencoba Game Saya</h2>
+  </div>
+
+  <div class="wallet-content" id="walletContent">
+    <h2>Wallet Anda</h2>
+    <div class="wallet-card">
+      <h3>Saldo:</h3>
+      <span id="walletBalance">Rp. 0</span>
+    </div>
+    <div class="wallet-card">
+      <h3>Total Menang:</h3>
+      <span id="walletWin">Rp. 0</span>
+    </div>
+    <div class="wallet-card">
+      <h3>Total Kalah:</h3>
+      <span id="walletLose">Rp. 0</span>
+    </div>
   </div>
 
   <div class="main-content" id="gameContent">
@@ -135,183 +170,197 @@
   </div>
 
   <script>
-  // Ambil wallet dari localStorage, jika tidak ada set ke 10000 dan simpan
-  let storedWallet = localStorage.getItem("wallet");
-  let wallet = storedWallet !== null ? parseFloat(storedWallet) : 10000;
-  if (storedWallet === null) {
-    localStorage.setItem("wallet", wallet); // Simpan nilai awal hanya sekali
-  }
-
-  // Fungsi untuk memperbarui saldo di tampilan dan simpan ke localStorage
-  function updateWallet(amount) {
-    wallet += amount;
-    localStorage.setItem("wallet", wallet);
-    updateDisplay();
-  }
-
-  function updateDisplay() {
-    document.getElementById("wallet").innerText = wallet.toFixed(2);
-    document.getElementById("totalBet").innerText = baseBet.toFixed(2);
-    document.getElementById("winAmount").innerText = totalBet.toFixed(2);
-  }
-
-  function toggleMenu() {
-    const menu = document.getElementById("menu");
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-  }
-
-  function showGame() {
-    document.getElementById("generalContent").style.display = "none";
-    document.getElementById("gameContent").style.display = "flex";
-    document.getElementById("menu").style.display = "none";
-  }
-
-  function showGeneral() {
-    document.getElementById("generalContent").style.display = "flex";
-    document.getElementById("gameContent").style.display = "none";
-    document.getElementById("menu").style.display = "none";
-  }
-
-  function hideAll() {
-    document.getElementById("generalContent").style.display = "none";
-    document.getElementById("gameContent").style.display = "none";
-    document.getElementById("menu").style.display = "none";
-  }
-
-  const multipliers = {
-    1: [1.28, 1.71, 2.28, 3.03, 4.05, 5.39, 7.19, 9.59, 12.79, 17.05],
-    2: [1.44, 2.16, 3.24, 4.86, 7.29, 10.93, 16.4, 24.6, 36.91, 55.36],
-    3: [1.92, 3.84, 7.68, 15.36, 30.72, 61.44, 122.88, 245.76, 491.52, 983.04],
-  };
-
-  let grid = [];
-  let currentRow = 9;
-  let selectedLevel = 1;
-  let columns = 4;
-  let baseBet = 10;
-  let totalBet = 0;
-  let gameActive = false;
-
-  function startGame() {
-    baseBet = parseFloat(document.getElementById("bet").value);
-    selectedLevel = parseInt(document.getElementById("level").value);
-    columns = 5 - selectedLevel;
-    currentRow = 9;
-
-    if (baseBet > wallet || baseBet <= 0) {
-      alert("Saldo tidak cukup atau bet tidak valid!");
-      return;
+    let storedWallet = localStorage.getItem("wallet");
+    let wallet = storedWallet !== null ? parseFloat(storedWallet) : 10000;
+    if (storedWallet === null) {
+      localStorage.setItem("wallet", wallet);
     }
 
-    updateWallet(-baseBet);
-    totalBet = 0;
-    gameActive = true;
-    document.getElementById("gameStatus").innerText = "Game Dimulai!";
-    updateDisplay();
+    let walletWin = parseFloat(localStorage.getItem("walletWin")) || 0;
+    let walletLose = parseFloat(localStorage.getItem("walletLose")) || 0;
 
-    document.documentElement.style.setProperty('--cols', columns);
-    grid = [];
+    function updateWallet(amount) {
+      wallet += amount;
+      localStorage.setItem("wallet", wallet);
+      updateDisplay();
+    }
 
-    for (let r = 0; r < 10; r++) {
-      const row = [];
-      const bombIndex = Math.floor(Math.random() * columns);
-      for (let c = 0; c < columns; c++) {
-        row.push({ bomb: c === bombIndex, revealed: false });
+    function updateDisplay() {
+      document.getElementById("wallet").innerText = wallet.toFixed(2);
+      document.getElementById("totalBet").innerText = baseBet.toFixed(2);
+      document.getElementById("winAmount").innerText = totalBet.toFixed(2);
+      document.getElementById("walletBalance").innerText = "Rp. " + wallet.toFixed(2);
+      document.getElementById("walletWin").innerText = "Rp. " + walletWin.toFixed(2);
+      document.getElementById("walletLose").innerText = "Rp. " + walletLose.toFixed(2);
+    }
+
+    function toggleMenu() {
+      const menu = document.getElementById("menu");
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+
+    function showGame() {
+      hideAll();
+      document.getElementById("gameContent").style.display = "flex";
+    }
+
+    function showGeneral() {
+      hideAll();
+      document.getElementById("generalContent").style.display = "flex";
+    }
+
+    function showWallet() {
+      hideAll();
+      document.getElementById("walletContent").style.display = "flex";
+    }
+
+    function hideAll() {
+      document.getElementById("generalContent").style.display = "none";
+      document.getElementById("gameContent").style.display = "none";
+      document.getElementById("walletContent").style.display = "none";
+      document.getElementById("menu").style.display = "none";
+    }
+
+    const multipliers = {
+      1: [1.28, 1.71, 2.28, 3.03, 4.05, 5.39, 7.19, 9.59, 12.79, 17.05],
+      2: [1.44, 2.16, 3.24, 4.86, 7.29, 10.93, 16.4, 24.6, 36.91, 55.36],
+      3: [1.92, 3.84, 7.68, 15.36, 30.72, 61.44, 122.88, 245.76, 491.52, 983.04],
+    };
+
+    let grid = [];
+    let currentRow = 9;
+    let selectedLevel = 1;
+    let columns = 4;
+    let baseBet = 10;
+    let totalBet = 0;
+    let gameActive = false;
+
+    function startGame() {
+      baseBet = parseFloat(document.getElementById("bet").value);
+      selectedLevel = parseInt(document.getElementById("level").value);
+      columns = 5 - selectedLevel;
+      currentRow = 9;
+
+      if (baseBet > wallet || baseBet <= 0) {
+        alert("Saldo tidak cukup atau bet tidak valid!");
+        return;
       }
-      grid.push(row);
-    }
 
-    renderGrid();
-  }
+      updateWallet(-baseBet);
+      totalBet = 0;
+      gameActive = true;
+      document.getElementById("gameStatus").innerText = "Game Dimulai!";
+      updateDisplay();
 
-  function renderGrid() {
-    const gridContainer = document.getElementById("grid");
-    gridContainer.innerHTML = "";
-    grid.forEach((row, rIdx) => {
-      row.forEach((cell, cIdx) => {
-        const cellDiv = document.createElement("div");
-        cellDiv.className = "cell";
-        if (cell.revealed) {
-          cellDiv.classList.add("revealed");
-          if (cell.bomb) {
-            cellDiv.classList.add("bomb");
-            cellDiv.innerHTML = "&#x1F480;";
-          } else {
-            cellDiv.classList.add("correct");
-            cellDiv.innerHTML = "&#x1F4B2;";
-          }
+      document.documentElement.style.setProperty('--cols', columns);
+      grid = [];
+
+      for (let r = 0; r < 10; r++) {
+        const row = [];
+        const bombIndex = Math.floor(Math.random() * columns);
+        for (let c = 0; c < columns; c++) {
+          row.push({ bomb: c === bombIndex, revealed: false });
         }
-        cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
-        gridContainer.appendChild(cellDiv);
+        grid.push(row);
+      }
+
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const gridContainer = document.getElementById("grid");
+      gridContainer.innerHTML = "";
+      grid.forEach((row, rIdx) => {
+        row.forEach((cell, cIdx) => {
+          const cellDiv = document.createElement("div");
+          cellDiv.className = "cell";
+          if (cell.revealed) {
+            cellDiv.classList.add("revealed");
+            if (cell.bomb) {
+              cellDiv.classList.add("bomb");
+              cellDiv.innerHTML = "&#x1F480;";
+            } else {
+              cellDiv.classList.add("correct");
+              cellDiv.innerHTML = "&#x1F4B2;";
+            }
+          }
+          cellDiv.addEventListener("click", () => handleClick(rIdx, cIdx));
+          gridContainer.appendChild(cellDiv);
+        });
       });
-    });
-  }
-
-  function handleClick(r, c) {
-    if (!gameActive || r !== currentRow || grid[r][c].revealed) return;
-
-    grid[r][c].revealed = true;
-
-    if (grid[r][c].bomb) {
-      revealAll();
-      totalBet = 0;
-      gameActive = false;
-      alert("Game Over! You Lose.");
-      document.getElementById("gameStatus").innerText = "Game Over!";
-      updateDisplay();
-      return;
     }
 
-    totalBet = baseBet * multipliers[selectedLevel][9 - currentRow];
-    updateDisplay();
+    function handleClick(r, c) {
+      if (!gameActive || r !== currentRow || grid[r][c].revealed) return;
 
-    if (currentRow === 0) {
-      revealAll();
-      gameActive = false;
-      updateWallet(totalBet);
-      alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
-      document.getElementById("gameStatus").innerText = "Menang!";
-      totalBet = 0;
+      grid[r][c].revealed = true;
+
+      if (grid[r][c].bomb) {
+        revealAll();
+        walletLose += baseBet;
+        localStorage.setItem("walletLose", walletLose);
+        totalBet = 0;
+        gameActive = false;
+        alert("Game Over! You Lose.");
+        document.getElementById("gameStatus").innerText = "Game Over!";
+        updateDisplay();
+        return;
+      }
+
+      totalBet = baseBet * multipliers[selectedLevel][9 - currentRow];
       updateDisplay();
-      return;
+
+      if (currentRow === 0) {
+        revealAll();
+        gameActive = false;
+        updateWallet(totalBet);
+        walletWin += totalBet;
+        localStorage.setItem("walletWin", walletWin);
+        alert("You Win! Total Win: Rp." + totalBet.toFixed(2));
+        document.getElementById("gameStatus").innerText = "Menang!";
+        totalBet = 0;
+        updateDisplay();
+        return;
+      }
+
+      currentRow--;
+      renderGrid();
     }
 
-    currentRow--;
-    renderGrid();
-  }
+    function revealAll() {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < columns; c++) {
+          grid[r][c].revealed = true;
+        }
+      }
+      renderGrid();
+    }
 
-  function revealAll() {
-    for (let r = 0; r < 10; r++) {
-      for (let c = 0; c < columns; c++) {
-        grid[r][c].revealed = true;
+    function withdrawBet() {
+      if (!gameActive) {
+        alert("Tidak ada permainan yang aktif.");
+        return;
+      }
+
+      if (totalBet > 0) {
+        updateWallet(totalBet);
+        walletWin += totalBet;
+        localStorage.setItem("walletWin", walletWin);
+        alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
+        totalBet = 0;
+        gameActive = false;
+        document.getElementById("gameStatus").innerText = "Withdraw sukses. Game selesai.";
+        revealAll();
+        updateDisplay();
+      } else {
+        alert("Belum ada kemenangan untuk ditarik.");
       }
     }
-    renderGrid();
-  }
 
-  function withdrawBet() {
-    if (!gameActive) {
-      alert("Tidak ada permainan yang aktif.");
-      return;
-    }
-
-    if (totalBet > 0) {
-      updateWallet(totalBet);
-      alert("Withdraw berhasil! Anda menarik Rp." + totalBet.toFixed(2));
-      totalBet = 0;
-      gameActive = false;
-      document.getElementById("gameStatus").innerText = "Withdraw sukses. Game selesai.";
-      revealAll();
+    window.onload = () => {
+      showGeneral();
       updateDisplay();
-    } else {
-      alert("Belum ada kemenangan untuk ditarik.");
-    }
-  }
-
-  window.onload = () => {
-    showGeneral();
-    updateDisplay();
-  };
-</script>
+    };
+  </script>
 </body>
 </html>
